@@ -1,0 +1,74 @@
+#!/bin/sh
+#
+# Script to start, stop & continue hamster time tracker activities from dmenu.
+#
+# - To cancel, type escape
+# - If you enter a single question mark ("?") the current/last activity is sent to notify
+# - If you enter a single minus sign ("-") at the prompt, time tracking is stopped
+# - Anything else will start a new task. Format is the hamster format: `activity`@`category`
+# - Completion list shows all entries, with the entries most recently entered via 
+#   hamster-dmenu first. So pressing 'enter' will continue the last activity.
+#
+# Requirements: hamster-cli, dmenu, notify-send, sed and awk
+# The script can be invoked with any dmenu settings (eg. -i for case insensitivity)
+#
+
+hamstercli='/usr/bin/hamster-cli'
+dmenu='/usr/bin/dmenu'
+notify='/usr/bin/notify-send hamster'
+notifycrit='/usr/bin/notify-send -u critical hamster'
+echo_with_nl='printf %b'
+make_unique='awk !a[$0]++'
+remove_empty_lines='sed /^\s*$/d'
+cachedir=${XDG_CACHE_HOME:-'$HOME/.cache'}
+cache_content=''
+if [ -d "${cachedir}" ]; then
+        cache=${cachedir}/hamster-dmenu
+else
+        cache=${HOME}/.hamster-dmenu-cache
+fi
+
+# Build list of entries
+if [ -f "${cache}" ]
+then
+    cache_content=`cat ${cache}`
+    entries=${cache_content}\\n`${hamstercli} list-activities`
+    # Ensure each entry is unique and remove blank lines
+    entries=`${echo_with_nl}  "${entries}" | ${make_unique} | ${remove_empty_lines}`
+else
+    entries=`${hamstercli} list-activities`
+fi
+
+# Get prompt
+activity=`${echo_with_nl} "${entries}" | ${dmenu} "$@"`
+
+# Do nothing on escape
+if [ $? -eq 1 ]
+then
+    exit 0
+fi
+
+# Stop on single -
+if [ "${activity}" = "-" ]
+then
+    ${hamstercli} stop
+    exit 0
+fi
+
+# Show status on single ?
+if [ "${activity}" = "?" ]
+then
+    ${notify} "`${hamstercli} list|tail -1`"
+    exit 0
+fi
+
+# Otherwise start a new activity
+$hamstercli start "$activity"
+if [ $? -eq 0 ]
+then
+    # Update the mru cache
+    ${echo_with_nl} "${activity}\n${cache_content}" | ${make_unique} > ${cache}
+else
+    $notifycrit "Hamster failed to start task"
+    exit 1
+fi
