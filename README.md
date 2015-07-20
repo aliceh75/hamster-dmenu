@@ -9,7 +9,7 @@ You can enter a new task, or rely on the auto-completion to find a previous task
 ## Usage
 
 - To cancel, type escape;
-- If you enter a single question mark ("?") the current/last activity of the day is sent to notify;
+- If you enter a single forward slash ("/") the hamster time tracker gui is opened;
 - If you enter a single minus sign ("-"), time tracking is stopped;
 - Anything else will start a new task. Format is the *hamster* format: `activity@category`
 
