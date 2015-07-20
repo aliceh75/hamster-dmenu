@@ -3,8 +3,8 @@
 # Script to start, stop & continue hamster time tracker activities from dmenu.
 #
 # - To cancel, type escape
-# - If you enter a single question mark ("?") the current/last activity is sent to notify
 # - If you enter a single minus sign ("-") at the prompt, time tracking is stopped
+# - If you enter a single forward slash ("/") at the prompt, hamster-time-tracker is launched
 # - Anything else will start a new task. Format is the hamster format: `activity`@`category`
 # - Completion list shows all entries, with the entries most recently entered via 
 #   hamster-dmenu first. So pressing 'enter' will continue the last activity.
@@ -13,13 +13,19 @@
 # The script can be invoked with any dmenu settings (eg. -i for case insensitivity)
 #
 
+# Paths to utilities
+hamster='/usr/bin/hamster-time-tracker'
 hamstercli='/usr/bin/hamster-cli'
 dmenu='/usr/bin/dmenu'
 notify='/usr/bin/notify-send hamster'
 notifycrit='/usr/bin/notify-send -u critical hamster'
+
+# Shell shorthands
 echo_with_nl='printf %b'
 make_unique='awk !a[$0]++'
 remove_empty_lines='sed /^\s*$/d'
+
+# Caching
 cachedir=${XDG_CACHE_HOME:-'$HOME/.cache'}
 cache_content=''
 if [ -d "${cachedir}" ]; then
@@ -55,10 +61,10 @@ then
     exit 0
 fi
 
-# Show status on single ?
-if [ "${activity}" = "?" ]
+# Run hamster on single '/'
+if [ "${activity}" = "/" ]
 then
-    ${notify} "`${hamstercli} list|tail -1`"
+    exec ${hamster}
     exit 0
 fi
 
